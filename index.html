@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fra Figma til Claude — 4 steg for best resultat</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --ink: #1a1a1a;
+    --ink-soft: #5a5a5a;
+    --ink-faint: #8a8a85;
+    --border: #e4e4dd;
+    --border-strong: #c8c8c0;
+    --accent: #cc7355;
+    --accent-soft: #f4e8e3;
+    --accent-dark: #b85c40;
+    --success: #2d8659;
+    --code-bg: #1d1d1b;
+    --code-ink: #f2f2ed;
+    --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 10px 30px rgba(0,0,0,0.05);
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 32px 24px 80px;
+  }
+
+  /* Header */
+  header { margin-bottom: 28px; }
+  .brand {
+    font-size: 12px;
+    color: var(--ink-soft);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 6px 0 4px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .tagline {
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 0;
+    max-width: 640px;
+  }
+
+  /* Progress */
+  .progress {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 28px 0 24px;
+    max-width: 640px;
+  }
+  .progress-dot {
+    flex: 1;
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    transition: background 0.3s;
+    cursor: pointer;
+    position: relative;
+  }
+  .progress-dot.done { background: var(--accent); }
+  .progress-dot.current { background: var(--accent); }
+  .progress-dot:hover::after {
+    content: attr(data-label);
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 10;
+  }
+
+  .step-counter {
+    font-size: 12px;
+    color: var(--ink-faint);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  /* Layout — single vs two-column */
+  .layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+    transition: grid-template-columns 0.25s ease;
+  }
+  .layout.with-preview {
+    grid-template-columns: 1fr 380px;
+  }
+  @media (max-width: 1000px) {
+    .layout.with-preview { grid-template-columns: 1fr; }
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px;
+    box-shadow: var(--shadow);
+  }
+  .form-card { min-height: 420px; }
+
+  .step { display: none; }
+  .step.active { display: block; }
+
+  .step h2 {
+    font-size: 22px;
+    margin: 0 0 6px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+  .step .lead {
+    color: var(--ink-soft);
+    font-size: 15px;
+    margin: 0 0 24px;
+  }
+
+  /* Section heading inside step */
+  .section-heading {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 28px 0 14px;
+    padding-top: 20px;
+    border-top: 1px solid var(--border);
+  }
+  .section-heading:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+  /* Checklist */
+  .checklist {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .checklist li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .checklist li:hover { border-color: var(--border-strong); }
+  .checklist li.checked {
+    background: #f6fbf8;
+    border-color: #bde0cc;
+  }
+  .checklist input {
+    margin: 4px 0 0;
+    accent-color: var(--success);
+    cursor: pointer;
+  }
+  .checklist .item-text { flex: 1; }
+  .checklist .item-title {
+    font-weight: 500;
+    font-size: 14.5px;
+    margin-bottom: 2px;
+  }
+  .checklist .item-hint {
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* Tip box */
+  .tip {
+    margin-top: 20px;
+    padding: 14px 16px;
+    background: var(--accent-soft);
+    border-left: 3px solid var(--accent);
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: #5a2e1c;
+  }
+  .tip strong { color: var(--accent-dark); }
+  .tip a { color: var(--accent-dark); }
+
+  /* Form */
+  .field { margin-bottom: 20px; }
+  .field:last-child { margin-bottom: 0; }
+
+  label.field-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--ink);
+  }
+  .hint {
+    font-size: 12.5px;
+    color: var(--ink-soft);
+    margin-bottom: 8px;
+  }
+  .hint a { color: var(--accent); text-decoration: none; border-bottom: 1px solid var(--accent-soft); }
+
+  input[type="text"], textarea {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    background: #fff;
+    color: var(--ink);
+    transition: all 0.15s;
+  }
+  input[type="text"]:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  textarea { resize: vertical; min-height: 64px; }
+
+  /* Chips */
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chips.column { flex-direction: column; align-items: stretch; }
+  .chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 7px 13px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 13px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.15s;
+  }
+  .chips.column .chip { border-radius: 8px; justify-content: flex-start; }
+  .chip:hover { border-color: var(--ink-soft); }
+  .chip input { display: none; }
+  .chip:has(input:checked) {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-dark);
+    font-weight: 500;
+  }
+
+  /* Toggle (advanced fields) */
+  .advanced-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    margin: 24px 0 0;
+    background: var(--bg);
+    border: 1px dashed var(--border-strong);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-soft);
+    transition: all 0.15s;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+  }
+  .advanced-toggle:hover {
+    background: #f4f4ee;
+    color: var(--ink);
+  }
+  .advanced-toggle .chevron {
+    transition: transform 0.2s;
+    font-size: 11px;
+  }
+  .advanced-toggle.open .chevron { transform: rotate(90deg); }
+  .advanced-toggle.open {
+    color: var(--ink);
+    background: transparent;
+  }
+
+  .advanced-fields { display: none; margin-top: 20px; }
+  .advanced-fields.open { display: block; }
+
+  /* Toggle row */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+  }
+  .toggle-row:hover { border-color: var(--border-strong); }
+  .toggle-row input { accent-color: var(--accent); cursor: pointer; }
+  .toggle-row .toggle-text { flex: 1; font-size: 14px; }
+
+  /* Navigation */
+  .nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 24px;
+  }
+  .btn {
+    border: 1px solid var(--accent);
+    background: var(--accent);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--accent-dark); border-color: var(--accent-dark); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.copied { background: var(--success); border-color: var(--success); }
+
+  .btn-secondary {
+    background: #fff;
+    color: var(--ink);
+    border-color: var(--border-strong);
+  }
+  .btn-secondary:hover {
+    background: var(--bg);
+    border-color: var(--ink-soft);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink-soft);
+    border: none;
+    padding: 10px 12px;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-ghost:hover { color: var(--ink); }
+
+  /* Live Preview */
+  .preview-card {
+    position: sticky;
+    top: 20px;
+    align-self: start;
+    padding: 24px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    max-height: calc(100vh - 60px);
+    display: flex;
+    flex-direction: column;
+  }
+  .preview-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  .preview-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 0;
+  }
+  .preview-counter {
+    font-size: 11px;
+    color: var(--ink-faint);
+  }
+  .preview-mini {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 16px;
+    border-radius: 8px;
+    font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    line-height: 1.55;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    margin: 0 0 14px;
+    flex: 1;
+    min-height: 280px;
+  }
+  .preview-mini::-webkit-scrollbar { width: 6px; }
+  .preview-mini::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+  .preview-actions {
+    display: flex;
+    gap: 8px;
+  }
+  .preview-actions .btn { flex: 1; padding: 8px 12px; font-size: 13px; }
+
+  /* Result step */
+  .result-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+  }
+  pre.prompt {
+    background: var(--code-bg);
+    color: var(--code-ink);
+    padding: 22px;
+    border-radius: 10px;
+    font-family: "JetBrains Mono", "SF Mono", Menlo, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 60vh;
+    overflow-y: auto;
+    margin: 0;
+  }
+  .result-tip {
+    margin-top: 18px;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+
+  /* Custom question add */
+  .custom-q {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .custom-q input { flex: 1; }
+  .added-questions {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .added-q {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: var(--accent-soft);
+    border-radius: 6px;
+    font-size: 13.5px;
+    color: var(--accent-dark);
+  }
+  .added-q button {
+    margin-left: auto;
+    border: none;
+    background: none;
+    color: var(--accent-dark);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    padding: 0 4px;
+  }
+
+  /* Footer */
+  footer {
+    margin-top: 32px;
+    text-align: center;
+    font-size: 12px;
+    color: var(--ink-faint);
+  }
+  footer strong { color: var(--ink-soft); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header>
+    <div class="brand">Aboveit</div>
+    <h1>Fra Figma til Claude</h1>
+    <p class="tagline">4 steg fra Figma-fil til en presis designvurdering. Fyll inn det viktigste — se prompten bygges i sanntid.</p>
+  </header>
+
+  <div class="progress" id="progress">
+    <div class="progress-dot" data-step="1" data-label="Forbered og eksporter"></div>
+    <div class="progress-dot" data-step="2" data-label="Design brief"></div>
+    <div class="progress-dot" data-step="3" data-label="Presise spørsmål"></div>
+    <div class="progress-dot" data-step="4" data-label="Iterer med referanser"></div>
+    <div class="progress-dot" data-step="5" data-label="Din prompt"></div>
+  </div>
+
+  <div class="layout" id="layout">
+
+    <div class="card form-card" id="formCard">
+
+      <!-- STEG 1: Forbered og eksporter -->
+      <section class="step" data-step="1">
+        <div class="step-counter">Steg 1 av 4</div>
+        <h2>Forbered og eksporter</h2>
+        <p class="lead">Claude leser kontekst, ikke bare piksler. Rydd lagnavn, plukk ut det viktigste fra Figma, og finn designsystem-filen før du går videre.</p>
+
+        <ul class="checklist">
+          <li>
+            <input type="checkbox" data-key="s1a">
+            <div class="item-text">
+              <div class="item-title">Rydd lagnavn og komponentnavn i Figma</div>
+              <div class="item-hint"><em>Card / Product / Selected</em> gir mer mening enn <em>Group 47</em>. Annotations bør beskrive intensjon — ikke utseende.</div>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox" data-key="s1b">
+            <div class="item-text">
+              <div class="item-title">Eksporter 3–7 skjermbilder av nøkkelflyt</div>
+              <div class="item-hint">PNG eller JPG i høy oppløsning. Velg kvalitet over kvantitet — 50 vilkårlige bilder gir verre svar enn 5 utvalgte.</div>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox" data-key="s1c">
+            <div class="item-text">
+              <div class="item-title">Finn designsystem-filen og kopier lenken</div>
+              <div class="item-hint">Designsystemet er som regel en separat publisert Figma-fil. Høyreklikk filen → <em>Copy link</em>, eller åpne den → <em>Share → Copy link</em>. Lim inn lenken i Steg 2.</div>
+            </div>
+          </li>
+          <li>
+            <input type="checkbox" data-key="s1d">
+            <div class="item-text">
+              <div class="item-title">Eksporter komponentoversikten fra designsystem-filen</div>
+              <div class="item-hint">"Cover"-siden eller komponentbiblioteket som ett bilde. Selv om du deler lenken, hjelper det visuelle Claude å forstå systemet umiddelbart.</div>
+            </div>
+          </li>
+        </ul>
+
+        <div class="tip">
+          <strong>Hvorfor dette steget:</strong> Semantiske lagnavn og et tilgjengelig designsystem er det som skiller en generisk vurdering fra en presis. Gjør dette én gang godt — så går resten fortere.
+        </div>
+      </section>
+
+      <!-- STEG 2: Design brief -->
+      <section class="step" data-step="2">
+        <div class="step-counter">Steg 2 av 4</div>
+        <h2>Skriv et design brief</h2>
+        <p class="lead">Det viktigste steget. Aktiverer designforståelsen i Claude — fra "hva ser jeg" til "hva skal dette løse".</p>
+
+        <div class="section-heading">Kontekst</div>
+
+        <div class="field">
+          <label class="field-label" for="product">Produkt og kontekst</label>
+          <div class="hint">1–2 setninger om hva produktet er.</div>
+          <textarea id="product" placeholder="F.eks. Et internt saksbehandlingsverktøy for sertifiseringskonsulenter i DNV"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="task">Brukerens hovedoppgave</label>
+          <div class="hint">Hva skal brukeren faktisk få til på skjermen?</div>
+          <textarea id="task" placeholder="F.eks. Vurdere og godkjenne innsendte sertifiseringssøknader fra rederier"></textarea>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Plattform</label>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="platform" value="Responsiv web"> Responsiv web</label>
+            <label class="chip"><input type="radio" name="platform" value="iOS-app"> iOS-app</label>
+            <label class="chip"><input type="radio" name="platform" value="Android-app"> Android-app</label>
+            <label class="chip"><input type="radio" name="platform" value="Desktop-applikasjon"> Desktop</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Brukergruppe</label>
+          <div class="chips">
+            <label class="chip"><input type="radio" name="users" value="bredt"> Bredt publikum</label>
+            <label class="chip"><input type="radio" name="users" value="fag"> Fagbrukere/eksperter</label>
+            <label class="chip"><input type="radio" name="users" value="eldre"> Eldre / lav digital kompetanse</label>
+            <label class="chip"><input type="radio" name="users" value="tekniske"> Tekniske brukere</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Hovedfokus for vurderingen</label>
+          <div class="hint">Det Claude skal være ekstra streng på.</div>
+          <div class="chips">
+            <label class="chip"><input type="checkbox" name="focus" value="hierarki"> Informasjonshierarki</label>
+            <label class="chip"><input type="checkbox" name="focus" value="flyt"> Brukerflyt og navigasjon</label>
+            <label class="chip"><input type="checkbox" name="focus" value="tilgjengelighet"> Tilgjengelighet</label>
+            <label class="chip"><input type="checkbox" name="focus" value="konsistens"> Visuell konsistens</label>
+            <label class="chip"><input type="checkbox" name="focus" value="mikrocopy"> Mikrocopy og tone</label>
+          </div>
+        </div>
+
+        <div class="section-heading">Designsystemet</div>
+
+        <div class="field">
+          <label class="field-label" for="dsLink">Lenke til designsystem-filen i Figma</label>
+          <div class="hint">Den du kopierte i Steg 1.</div>
+          <input type="text" id="dsLink" placeholder="https://www.figma.com/file/... eller https://www.figma.com/community/file/...">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="dsFonts">Fonter og kilde</label>
+          <div class="hint">Lim inn lenker til <a href="https://fonts.google.com" target="_blank">Google Fonts</a> eller <a href="https://fonts.adobe.com/fonts" target="_blank">Adobe Fonts</a> — så har Claude tilgang til varianter og spesifikasjoner.</div>
+          <textarea id="dsFonts" placeholder="F.eks.&#10;Inter — https://fonts.google.com/specimen/Inter&#10;Source Serif Pro — https://fonts.adobe.com/fonts/source-serif-pro"></textarea>
+        </div>
+
+        <button type="button" class="advanced-toggle" id="advancedToggle">
+          <span class="chevron">▶</span>
+          <span class="advanced-label">Vis flere felter (designprinsipper, komponenter, tokens)</span>
+        </button>
+
+        <div class="advanced-fields" id="advancedFields">
+
+          <div class="field">
+            <label class="field-label">Designprinsipper / standard som skal følges</label>
+            <div class="hint">Eksterne standarder, hvis aktuelt.</div>
+            <div class="chips">
+              <label class="chip"><input type="checkbox" name="system" value="WCAG AA-tilgjengelighet"> WCAG AA</label>
+              <label class="chip"><input type="checkbox" name="system" value="Material Design 3"> Material 3</label>
+              <label class="chip"><input type="checkbox" name="system" value="Apple Human Interface Guidelines"> Apple HIG</label>
+            </div>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="dsName">Navn og kjerneprinsipper for designsystemet</label>
+            <div class="hint">Bare hvis du ikke har delt DS-lenken — Claude kan ellers trekke dette ut selv.</div>
+            <textarea id="dsName" placeholder="F.eks. DNV Design System v3 — kjerneprinsipper: klarhet, autoritet, presisjon"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="dsComponents">Komponenter brukt på skjermen</label>
+            <div class="hint">Navn slik de heter i Figma.</div>
+            <textarea id="dsComponents" placeholder="F.eks. Card / Product, Button / Primary, NavBar / Vertical"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="dsTokens">Designtokens</label>
+            <div class="hint">Farger, spacing, radius som tekst eller JSON.</div>
+            <textarea id="dsTokens" placeholder="F.eks.&#10;Farger: --primary #0056A4&#10;Spacing: 4, 8, 16, 24, 40"></textarea>
+          </div>
+
+          <div class="field">
+            <label class="field-label">Slik deler jeg designsystemet</label>
+            <div class="chips column">
+              <label class="chip"><input type="checkbox" name="dsMethod" value="screenshot"> Skjermbilder av komponentbibliotek</label>
+              <label class="chip"><input type="checkbox" name="dsMethod" value="pdf"> PDF med dokumentasjon</label>
+              <label class="chip"><input type="checkbox" name="dsMethod" value="tokens"> Tokens som tekst/JSON</label>
+              <label class="chip"><input type="checkbox" name="dsMethod" value="figma-link"> Figma-lenke (over)</label>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+      <!-- STEG 3: Presise spørsmål -->
+      <section class="step" data-step="3">
+        <div class="step-counter">Steg 3 av 4</div>
+        <h2>Still presise faglige spørsmål</h2>
+        <p class="lead">Unngå "hva synes du?". Velg eller skriv spørsmål som er konkrete nok til å gi nyttige svar.</p>
+
+        <div class="field">
+          <label class="field-label">Foreslåtte spørsmål</label>
+          <div class="chips column">
+            <label class="chip"><input type="checkbox" name="question" value="Vurder informasjonshierarkiet i dette skjermbildet"> Vurder informasjonshierarkiet</label>
+            <label class="chip"><input type="checkbox" name="question" value="Hvilke tilgjengelighetsproblemer ser du?"> Hvilke tilgjengelighetsproblemer ser du?</label>
+            <label class="chip"><input type="checkbox" name="question" value="Hvordan støtter denne flyten brukerens mentale modell?"> Støtter flyten brukerens mentale modell?</label>
+            <label class="chip"><input type="checkbox" name="question" value="Foreslå alternativer til denne navigasjonsstrukturen"> Foreslå alternativer til navigasjonen</label>
+            <label class="chip"><input type="checkbox" name="question" value="Hvor er friksjonen for en ekspertbruker som utfører oppgaven for hundrede gang?"> Hvor er friksjonen for en erfaren bruker?</label>
+            <label class="chip"><input type="checkbox" name="question" value="Hva er det viktigste elementet på skjermen, og er det visuelt prioritert deretter?"> Er det viktigste elementet visuelt prioritert?</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label">Egne spørsmål</label>
+          <div class="hint">Spesifikke for ditt prosjekt.</div>
+          <div class="custom-q">
+            <input type="text" id="customQuestion" placeholder="F.eks. Hvordan kommuniserer feilmeldingen alvor uten å skremme?">
+            <button class="btn btn-secondary" id="addQuestionBtn">Legg til</button>
+          </div>
+          <div class="added-questions" id="addedQuestions"></div>
+        </div>
+
+        <div class="tip">
+          <strong>Tips:</strong> 3–5 presise spørsmål gir bedre svar enn 10 vage.
+        </div>
+      </section>
+
+      <!-- STEG 4: Iterer -->
+      <section class="step" data-step="4">
+        <div class="step-counter">Steg 4 av 4</div>
+        <h2>Iterer med referanser</h2>
+        <p class="lead">Komparativ analyse er der Claude virkelig skinner — evnen til å resonnere over designvalg.</p>
+
+        <div class="field">
+          <label class="field-label" for="references">Sammenligningsreferanser</label>
+          <div class="hint">Produkter eller designsystemer Claude skal sammenligne med.</div>
+          <input type="text" id="references" placeholder="F.eks. GOV.UK, Tailwind UI, Linear, Material Design">
+        </div>
+
+        <div class="field">
+          <label class="field-label">Sammenligningsmodus</label>
+          <label class="toggle-row">
+            <input type="checkbox" id="comparisonMode">
+            <div class="toggle-text">
+              <strong>Jeg laster opp to versjoner av samme skjerm</strong><br>
+              <span style="color: var(--ink-soft); font-size: 13px;">Be Claude gjøre en strukturert A/B-sammenligning.</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="tip">
+          <strong>Bonustips:</strong> Claude er ikke et designverktøy — det er en designrådgiver. Bruker du den slik, åpnes et helt annet kvalitetsnivå i dialogen.
+        </div>
+      </section>
+
+      <!-- RESULTAT (steg 5) -->
+      <section class="step" data-step="5">
+        <div class="step-counter">Ferdig</div>
+        <div class="result-head">
+          <h2 style="margin: 0;">Din prompt er klar</h2>
+          <button class="btn" id="copyBtn">Kopier prompt</button>
+        </div>
+        <p class="lead">Lim inn i Claude sammen med eksporten fra Steg 1.</p>
+
+        <pre class="prompt" id="output"></pre>
+
+        <div class="result-tip">
+          Gå tilbake via tallene øverst hvis du vil justere. Det du har fylt ut lagres automatisk.
+        </div>
+      </section>
+
+      <!-- NAVIGATION -->
+      <div class="nav">
+        <button class="btn-ghost" id="prevBtn">← Tilbake</button>
+        <div style="display: flex; gap: 8px; align-items: center;">
+          <button class="btn-ghost" id="resetBtn" style="font-size: 13px;">Tilbakestill alt</button>
+          <button class="btn" id="nextBtn">Neste →</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- LIVE PREVIEW -->
+    <aside class="preview-card" id="previewCard">
+      <div class="preview-header">
+        <h3 class="preview-title">Prompten bygges</h3>
+        <span class="preview-counter" id="previewCounter">0 felt</span>
+      </div>
+      <pre class="preview-mini" id="previewMini"></pre>
+      <div class="preview-actions">
+        <button class="btn btn-secondary" id="copyPreviewBtn">Kopier</button>
+      </div>
+    </aside>
+
+  </div>
+
+  <footer>
+    Bygget for <strong>Aboveit</strong>
+  </footer>
+
+</div>
+
+<script>
+  const STORAGE_KEY = "figma-til-claude-v3";
+  let currentStep = 1;
+  const totalSteps = 5;
+  let customQuestions = [];
+
+  const userGroupContext = {
+    bredt: {
+      label: "Bredt publikum (varierende alder og digital kompetanse)",
+      note: "Designet må fungere uten forhåndskunnskap. Tydelig språk, romslige treffflater, lavt kognitivt løft, og forutsigbare mønstre er viktigere enn tetthet og hurtighet."
+    },
+    fag: {
+      label: "Fagbrukere/eksperter (profesjonelle med spesialisert kunnskap)",
+      note: "Fagbrukere ønsker tetthet, hurtighet og kontroll — ikke onboarding-vennlighet. Tastatursnarveier, batch-handlinger og forutsigbarhet er ofte viktigere enn pene mikroanimasjoner."
+    },
+    eldre: {
+      label: "Eldre brukere eller brukere med lav digital kompetanse",
+      note: "Stor tekst, høy kontrast, tydelig hierarki, få valg per skjerm, og forklarende mikrocopy. Unngå skjulte gester og ikoner uten tekst."
+    },
+    tekniske: {
+      label: "Tekniske brukere (utviklere, IT-personell)",
+      note: "Tåler kompleksitet og foretrekker effektivitet. Forventer tastaturnavigasjon, råverdier ved siden av formaterte verdier, og tilgang til underliggende detaljer."
+    }
+  };
+
+  const focusLabels = {
+    hierarki: "Informasjonshierarki — hva ser brukeren først, hvordan leder designet blikket",
+    flyt: "Brukerflyt og navigasjon — sammenheng mellom skjermer og mental modell",
+    tilgjengelighet: "Tilgjengelighet — kontrast, lesbarhet, skjermlesere, tastaturnavigasjon",
+    konsistens: "Visuell konsistens — komponenter, typografi, spacing",
+    mikrocopy: "Mikrocopy og tone — ordvalg, klarhet, stemme"
+  };
+
+  const dsMethodLabels = {
+    screenshot: "skjermbilder av komponentbibliotek",
+    pdf: "PDF med designsystem-dokumentasjon",
+    tokens: "designtokens som tekst/JSON",
+    "figma-link": "lenke til Figma-fil med designsystemet"
+  };
+
+  function $(id) { return document.getElementById(id); }
+  function getValue(name) {
+    const el = document.querySelector(`input[name="${name}"]:checked`);
+    return el ? el.value : null;
+  }
+  function getValues(name) {
+    return Array.from(document.querySelectorAll(`input[name="${name}"]:checked`)).map(el => el.value);
+  }
+
+  function showStep(n) {
+    currentStep = n;
+    document.querySelectorAll(".step").forEach(s => s.classList.remove("active"));
+    document.querySelector(`.step[data-step="${n}"]`).classList.add("active");
+
+    document.querySelectorAll(".progress-dot").forEach(dot => {
+      const step = parseInt(dot.dataset.step);
+      dot.classList.remove("done", "current");
+      if (step < n) dot.classList.add("done");
+      if (step === n) dot.classList.add("current");
+    });
+
+    // Show preview on steps 2-4, hide on 1 and 5
+    const layout = $("layout");
+    const previewCard = $("previewCard");
+    if (n >= 2 && n <= 4) {
+      layout.classList.add("with-preview");
+      previewCard.style.display = "flex";
+    } else {
+      layout.classList.remove("with-preview");
+      previewCard.style.display = "none";
+    }
+
+    $("prevBtn").style.visibility = n === 1 ? "hidden" : "visible";
+    const nextBtn = $("nextBtn");
+    if (n === totalSteps) {
+      nextBtn.style.display = "none";
+    } else if (n === totalSteps - 1) {
+      nextBtn.textContent = "Generer prompt →";
+      nextBtn.style.display = "";
+    } else {
+      nextBtn.textContent = "Neste →";
+      nextBtn.style.display = "";
+    }
+
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    save();
+  }
+
+  function countFilledFields() {
+    let count = 0;
+    if ($("product").value.trim()) count++;
+    if ($("task").value.trim()) count++;
+    if (getValue("platform")) count++;
+    if (getValue("users")) count++;
+    if (getValues("focus").length > 0) count++;
+    if ($("dsLink").value.trim()) count++;
+    if ($("dsFonts").value.trim()) count++;
+    if (getValues("system").length > 0) count++;
+    if ($("dsName").value.trim()) count++;
+    if ($("dsComponents").value.trim()) count++;
+    if ($("dsTokens").value.trim()) count++;
+    if (getValues("dsMethod").length > 0) count++;
+    if (getValues("question").length > 0 || customQuestions.length > 0) count++;
+    if ($("references").value.trim()) count++;
+    if ($("comparisonMode").checked) count++;
+    return count;
+  }
+
+  function buildPrompt() {
+    const product = $("product").value.trim();
+    const task = $("task").value.trim();
+    const platform = getValue("platform");
+    const usersKey = getValue("users");
+    const system = getValues("system");
+    const focus = getValues("focus");
+    const presetQs = getValues("question");
+    const references = $("references").value.trim();
+    const comparison = $("comparisonMode").checked;
+
+    const dsLink = $("dsLink").value.trim();
+    const dsFonts = $("dsFonts").value.trim();
+    const dsName = $("dsName").value.trim();
+    const dsComponents = $("dsComponents").value.trim();
+    const dsTokens = $("dsTokens").value.trim();
+    const dsMethods = getValues("dsMethod");
+
+    const userGroup = usersKey ? userGroupContext[usersKey] : null;
+    const allQuestions = [...presetQs, ...customQuestions];
+
+    const focusText = focus.length > 0
+      ? focus.map(f => `- ${focusLabels[f]}`).join("\n")
+      : "- [Ingen spesifikke fokusområder valgt — Claude vurderer helhetlig]";
+
+    const systemText = system.length > 0 ? system.join(", ") : null;
+
+    const questionsText = allQuestions.length > 0
+      ? allQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")
+      : "1. Vurder designet helhetlig med utgangspunkt i kontekst og fokusområder over.";
+
+    const referencesLine = references
+      ? `Sammenlign med etablerte mønstre fra: ${references}. Pek på hva som mangler, hva som er svakere, og hva som faktisk er bedre.`
+      : `Sammenlign med relevante etablerte mønstre i bransjen (du velger selv hvilke som er mest passende).`;
+
+    const comparisonBlock = comparison
+      ? `\nVIKTIG — SAMMENLIGNINGSMODUS\nJeg har lastet opp to versjoner av samme skjerm. Gjør en strukturert A/B-sammenligning:\n- For hvert spørsmål: svar separat for versjon A og versjon B\n- Konkluder hvilken som er sterkere, og hvorfor\n- Foreslå en hybrid hvis det er åpenbart bedre enn begge\n`
+      : "";
+
+    const hasDS = dsLink || dsFonts || dsName || dsComponents || dsTokens || dsMethods.length > 0;
+    const dsBlock = hasDS
+      ? `\nDESIGNSYSTEM (vurder designet mot dette — ikke bare mot generelle prinsipper)
+${dsLink ? `- Designsystem-fil (Figma): ${dsLink}` : ""}
+${dsFonts ? `- Fonter og kilde:\n${dsFonts.split("\n").map(l => "  " + l).join("\n")}` : ""}
+${dsName ? `- Systemet: ${dsName}` : ""}
+${dsComponents ? `- Komponenter i bruk på skjermen: ${dsComponents}` : ""}
+${dsTokens ? `- Tokens:\n${dsTokens.split("\n").map(l => "  " + l).join("\n")}` : ""}
+${dsMethods.length > 0 ? `- Vedlagt som: ${dsMethods.map(m => dsMethodLabels[m]).join(", ")}` : ""}
+
+Når du vurderer: pek konkret på hvor designet følger systemet, hvor det avviker, og om avvikene er bevisste eller utilsiktede. Foreslå forbedringer som er innenfor systemets rammer — ikke generelle "best practice"-løsninger som bryter med det etablerte.
+`
+      : "";
+
+    const systemLine = systemText
+      ? `\n- Eksterne standarder: ${systemText}`
+      : "";
+
+    return `Du skal være min UX-rådgiver — ikke et designverktøy.
+Resonner over designvalgene, ikke bare beskriv det du ser.
+
+KONTEKST (Design brief)
+- Produkt: ${product || "[BESKRIV PRODUKTET]"}
+- Brukerens hovedoppgave: ${task || "[HVA SKAL BRUKEREN OPPNÅ?]"}
+- Plattform: ${platform || "[VELG PLATTFORM]"}
+- Brukergruppe: ${userGroup ? userGroup.label : "[VELG BRUKERGRUPPE]"}${systemLine}
+
+HUSK OM BRUKERGRUPPEN
+${userGroup ? userGroup.note : "[Velg brukergruppe i Steg 2 for tilpasset kontekst]"}
+${dsBlock}
+FOKUS FOR VURDERINGEN
+${focusText}
+${comparisonBlock}
+KONKRETE SPØRSMÅL JEG VIL HA SVAR PÅ
+${questionsText}
+
+KOMPARATIV ANALYSE
+${referencesLine}
+
+GJØR DETTE I REKKEFØLGE
+1. Beskriv kort hva du ser (maks 2 setninger).
+2. Svar på hvert spørsmål over — konkret og med begrunnelse.
+3. Pek ut konkrete problemer knyttet til fokusområdene.
+4. Gjør den komparative analysen.
+5. Foreslå 3 prioriterte forbedringer med begrunnelse for hver.
+
+UNNGÅ
+- Generelle "ser bra ut"-kommentarer
+- Beskrivelser uten anbefaling
+- Designvalg uten begrunnelse
+- Forslag som ikke matcher brukergruppen
+
+Figma-eksport følger under.`;
+  }
+
+  function render() {
+    const prompt = buildPrompt();
+    $("output").textContent = prompt;
+    $("previewMini").textContent = prompt;
+    const n = countFilledFields();
+    $("previewCounter").textContent = n === 1 ? "1 felt" : `${n} felt`;
+  }
+
+  function renderCustomQuestions() {
+    const container = $("addedQuestions");
+    container.innerHTML = "";
+    customQuestions.forEach((q, i) => {
+      const div = document.createElement("div");
+      div.className = "added-q";
+      div.innerHTML = `<span>${q}</span><button data-i="${i}" aria-label="Fjern">×</button>`;
+      div.querySelector("button").addEventListener("click", () => {
+        customQuestions.splice(i, 1);
+        renderCustomQuestions();
+        render();
+        save();
+      });
+      container.appendChild(div);
+    });
+  }
+
+  function save() {
+    const state = {
+      step: currentStep,
+      advanced: $("advancedFields").classList.contains("open"),
+      product: $("product").value,
+      task: $("task").value,
+      references: $("references").value,
+      comparison: $("comparisonMode").checked,
+      dsLink: $("dsLink").value,
+      dsFonts: $("dsFonts").value,
+      dsName: $("dsName").value,
+      dsComponents: $("dsComponents").value,
+      dsTokens: $("dsTokens").value,
+      dsMethods: getValues("dsMethod"),
+      platform: getValue("platform"),
+      users: getValue("users"),
+      system: getValues("system"),
+      focus: getValues("focus"),
+      questions: getValues("question"),
+      customQuestions,
+      checklist: Object.fromEntries(
+        Array.from(document.querySelectorAll(".checklist input[type=checkbox]"))
+          .map(el => [el.dataset.key, el.checked])
+      )
+    };
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+  }
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const state = JSON.parse(raw);
+      $("product").value = state.product || "";
+      $("task").value = state.task || "";
+      $("references").value = state.references || "";
+      $("comparisonMode").checked = !!state.comparison;
+      $("dsLink").value = state.dsLink || "";
+      $("dsFonts").value = state.dsFonts || "";
+      $("dsName").value = state.dsName || "";
+      $("dsComponents").value = state.dsComponents || "";
+      $("dsTokens").value = state.dsTokens || "";
+      if (state.platform) {
+        const el = document.querySelector(`input[name="platform"][value="${state.platform}"]`);
+        if (el) el.checked = true;
+      }
+      if (state.users) {
+        const el = document.querySelector(`input[name="users"][value="${state.users}"]`);
+        if (el) el.checked = true;
+      }
+      ["system", "focus", "question", "dsMethod"].forEach(name => {
+        const key = name === "question" ? "questions" : (name === "dsMethod" ? "dsMethods" : name);
+        (state[key] || []).forEach(v => {
+          const el = document.querySelector(`input[name="${name}"][value="${CSS.escape(v)}"]`);
+          if (el) el.checked = true;
+        });
+      });
+      customQuestions = state.customQuestions || [];
+      renderCustomQuestions();
+      Object.entries(state.checklist || {}).forEach(([key, val]) => {
+        const el = document.querySelector(`.checklist input[data-key="${key}"]`);
+        if (el) {
+          el.checked = val;
+          el.closest("li").classList.toggle("checked", val);
+        }
+      });
+      if (state.advanced) {
+        $("advancedFields").classList.add("open");
+        $("advancedToggle").classList.add("open");
+        $("advancedToggle").querySelector(".advanced-label").textContent = "Skjul flere felter";
+      }
+      if (state.step) currentStep = state.step;
+    } catch(e) {}
+  }
+
+  // Event listeners
+  $("nextBtn").addEventListener("click", () => {
+    if (currentStep < totalSteps) showStep(currentStep + 1);
+  });
+  $("prevBtn").addEventListener("click", () => {
+    if (currentStep > 1) showStep(currentStep - 1);
+  });
+  document.querySelectorAll(".progress-dot").forEach(dot => {
+    dot.addEventListener("click", () => showStep(parseInt(dot.dataset.step)));
+  });
+
+  // Copy buttons
+  async function copyPrompt(btn, defaultLabel) {
+    try {
+      await navigator.clipboard.writeText(buildPrompt());
+      btn.textContent = "Kopiert ✓";
+      btn.classList.add("copied");
+      setTimeout(() => {
+        btn.textContent = defaultLabel;
+        btn.classList.remove("copied");
+      }, 1800);
+    } catch(e) {
+      alert("Kunne ikke kopiere automatisk. Marker teksten og kopier manuelt.");
+    }
+  }
+  $("copyBtn").addEventListener("click", (e) => copyPrompt(e.target, "Kopier prompt"));
+  $("copyPreviewBtn").addEventListener("click", (e) => copyPrompt(e.target, "Kopier"));
+
+  $("resetBtn").addEventListener("click", () => {
+    if (!confirm("Tilbakestille alt du har fylt ut?")) return;
+    try { localStorage.removeItem(STORAGE_KEY); } catch(e) {}
+    location.reload();
+  });
+
+  $("addQuestionBtn").addEventListener("click", () => {
+    const input = $("customQuestion");
+    const val = input.value.trim();
+    if (!val) return;
+    customQuestions.push(val);
+    input.value = "";
+    renderCustomQuestions();
+    render();
+    save();
+  });
+  $("customQuestion").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      $("addQuestionBtn").click();
+    }
+  });
+
+  // Advanced toggle
+  $("advancedToggle").addEventListener("click", () => {
+    const fields = $("advancedFields");
+    const toggle = $("advancedToggle");
+    const isOpen = fields.classList.toggle("open");
+    toggle.classList.toggle("open", isOpen);
+    toggle.querySelector(".advanced-label").textContent = isOpen
+      ? "Skjul flere felter"
+      : "Vis flere felter (designprinsipper, komponenter, tokens)";
+    save();
+  });
+
+  // Auto-save and live render on any change
+  document.querySelectorAll("input, textarea").forEach(el => {
+    el.addEventListener("input", () => { render(); save(); });
+    el.addEventListener("change", () => { render(); save(); });
+  });
+
+  // Checklist visual feedback
+  document.querySelectorAll(".checklist li").forEach(li => {
+    const input = li.querySelector("input[type=checkbox]");
+    li.addEventListener("click", (e) => {
+      if (e.target !== input) input.checked = !input.checked;
+      li.classList.toggle("checked", input.checked);
+      save();
+    });
+    input.addEventListener("change", () => {
+      li.classList.toggle("checked", input.checked);
+    });
+  });
+
+  // Init
+  load();
+  showStep(currentStep);
+</script>
+</body>
+</html>
